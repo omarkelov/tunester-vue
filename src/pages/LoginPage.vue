@@ -1,21 +1,22 @@
 <script setup lang='ts'>
 
 import { ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
-import { fetchLogin } from '../api/authAPI';
-import { useAbortController } from '../hooks/useAbortController';
-import { useFetching } from '../hooks/useFetching';
-import { User } from '../util/types';
+import { fetchLogin } from '../api/authAPI.js';
+import { useAbortController } from '../hooks/useAbortController.js';
+import { useFetching } from '../hooks/useFetching.js';
+import { MUSIC } from '../router';
+import { User } from '../util/types.js';
 
 
 const loginRef = ref<string>('');
 const passwordRef = ref<string>('');
 
-const emit = defineEmits<{
-    (e: 'userLoggedIn', user: User): void,
-}>();
-
 const abortController = useAbortController();
+
+const route = useRoute();
+const router = useRouter();
 
 const onFormSubmit = async () => {
     const { result: user, error } = await useFetching<User>(
@@ -26,11 +27,14 @@ const onFormSubmit = async () => {
         abortController.signal,
     );
 
-    if (user) {
-        emit('userLoggedIn', user);
-    } else if (error) {
+    if (!user) {
         console.log(error);
+        return;
     }
+
+    localStorage.setItem('user', JSON.stringify(user));
+
+    router.replace(route.query.redirect as string | undefined ?? { name: MUSIC });
 };
 
 </script>

@@ -1,14 +1,14 @@
 <script setup lang='ts'>
 
+import { useRouter } from 'vue-router';
+
 import { fetchLogout } from '../api/authAPI';
 import { useAbortController } from '../hooks/useAbortController';
 import { useFetching } from '../hooks/useFetching';
+import { LOGIN } from '../router';
 
 
-const emit = defineEmits<{
-    (e: 'userLoggedOut'): void,
-}>();
-
+const router = useRouter();
 const abortController = useAbortController();
 
 const onLogoutClicked = async () => {
@@ -17,11 +17,14 @@ const onLogoutClicked = async () => {
         abortController.signal,
     );
 
-    if (!error) {
-        emit('userLoggedOut');
-    } else {
+    if (error) {
         console.log(error);
+        return;
     }
+
+    localStorage.removeItem('user');
+
+    router.push({ name: LOGIN });
 };
 
 </script>
@@ -29,5 +32,3 @@ const onLogoutClicked = async () => {
 <template>
     <button @click='onLogoutClicked'>Logout</button>
 </template>
-
-<style scoped></style>

@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router';
 
 import { fetchGetMusic } from '../api/musicAPI';
 import { useWatchFetching } from '../hooks/useFetching';
-import { MUSIC } from '../router';
+import { MUSIC, PATH } from '../router';
 import { Directory } from '../util/types';
 
 
@@ -14,7 +14,7 @@ const {
     result: directoryInfo,
     error
 } = useWatchFetching<Directory>(
-    (signal: AbortSignal) => fetchGetMusic(route.params.path as string, signal),
+    (signal: AbortSignal) => fetchGetMusic(route.params[PATH] as string | undefined ?? '', signal),
     route
 );
 
@@ -33,7 +33,7 @@ const {
         <div>Directories:</div>
         <ul>
             <li :key='directory.path' v-for='directory in directoryInfo.directories'>
-                <router-link :to='`${MUSIC}/${directory.path}`'>
+                <router-link :to='{ name: MUSIC, params: { [PATH]: directory.path } }'>
                     {{ directory.path }}
                 </router-link>
             </li>

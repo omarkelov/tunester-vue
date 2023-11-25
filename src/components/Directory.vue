@@ -5,7 +5,7 @@ import { useRoute } from 'vue-router';
 import { fetchGetMusic } from '../api/musicAPI';
 import { useWatchFetching } from '../hooks/useFetching';
 import { MUSIC, PATH } from '../router';
-import { Directory } from '../util/types';
+import { Directory, Track } from '../util/types';
 
 
 const route = useRoute();
@@ -17,6 +17,14 @@ const {
     (signal: AbortSignal) => fetchGetMusic(route.params[PATH] as string | undefined ?? '', signal),
     route
 );
+
+const emit = defineEmits<{
+    (e: 'playTrack', track: Track): void
+}>();
+
+const onTrackClicked = (track: Track) => {
+    emit('playTrack', track);
+};
 
 </script>
 
@@ -40,7 +48,7 @@ const {
         </ul>
         <div>Tracks:</div>
         <ul>
-            <li :key='track.path' v-for='track in directoryInfo.tracks'>
+            <li :key='track.path' v-for='track in directoryInfo.tracks' @click='() => onTrackClicked(track)'>
                 {{ track.path }}
             </li>
         </ul>

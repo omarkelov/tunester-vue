@@ -1,7 +1,47 @@
 import { WatchOptions, ref, watch } from 'vue';
 
 
-export const useFetching = <R>(
+type FetchResult<R> = {
+    result?: R;
+    error?: string;
+}
+
+export const useFetching = async <R>(
+    fetchFn: (signal: AbortSignal) => Promise<Response>,
+    signal: AbortSignal,
+): Promise<FetchResult<R>> => {
+    try {
+        const response = await fetchFn(signal);
+
+        if (!response.ok) {
+            return {
+                error: `Response not OK: status ${response.status}`
+            };
+        }
+
+        if (response.status === 204) {
+            return {};
+        }
+
+        return {
+            result: await response.json()
+        };
+    } catch (e) {
+        if (signal.aborted) {
+            return {};
+        }
+
+        const errorMessage = JSON.stringify(e);
+
+        return {
+            error: errorMessage.length && errorMessage !== '{}'
+                ? `Unexpected error (${errorMessage})`
+                : 'Unknown error'
+        };
+    }
+};
+
+export const useWatchFetching = <R>(
     fetchFn: (signal: AbortSignal) => Promise<Response>,
     source: Parameters<typeof watch>[0],
     options: WatchOptions = { immediate: true },
@@ -28,31 +68,9 @@ export const useFetching = <R>(
                 abortController.abort();
             });
 
-            try {
-                const response = await fetchFn(abortController.signal);
+            const { result, error } = await useFetching<R>(fetchFn, abortController.signal);
 
-                if (!response.ok) {
-                    updateRefs(false, undefined, `Response not OK: status ${response.status}`);
-                    return;
-                }
-
-                if (response.status === 204) {
-                    return;
-                }
-
-                updateRefs(false, await response.json());
-            } catch (e) {
-                if (abortController.signal.aborted) {
-                    return;
-                }
-
-                const errorMessage = JSON.stringify(e);
-                const err = errorMessage.length && errorMessage !== '{}'
-                    ? `Unexpected error (${errorMessage})`
-                    : 'Unknown error';
-
-                updateRefs(false, undefined, err);
-            }
+            updateRefs(false, result, error);
         },
         options
     );

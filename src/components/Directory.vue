@@ -3,7 +3,7 @@
 import { useRoute } from 'vue-router';
 
 import { fetchGetMusic } from '../api/musicAPI';
-import { useFetching } from '../hooks/useFetching';
+import { useWatchFetching } from '../hooks/useFetching';
 import { MUSIC } from '../router';
 import { Directory } from '../util/types';
 
@@ -13,7 +13,7 @@ const {
     isLoading,
     result: directoryInfo,
     error
-} = useFetching<Directory>(
+} = useWatchFetching<Directory>(
     (signal: AbortSignal) => fetchGetMusic(route.params.path as string, signal),
     route
 );

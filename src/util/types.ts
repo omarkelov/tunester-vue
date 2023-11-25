@@ -1,3 +1,13 @@
+export enum UserRole {
+    ADMIN = 'ADMIN',
+    USER = 'USER',
+}
+
+export type User = {
+    username: string;
+    role: UserRole;
+}
+
 export type Credentials = {
     login: string;
     password: string;

@@ -1,3 +1,8 @@
+export type Credentials = {
+    login: string;
+    password: string;
+}
+
 export type Directory = {
     path: string;
     lastUpdated: string;

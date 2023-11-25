@@ -3,8 +3,8 @@ const HOST = 'localhost:8081';
 
 export const SERVER_ADDRESS = `${PROTOCOL}://${HOST}`;
 
-const LOGIN = '/login';
-const LOGOUT = '/logout';
+const LOGIN = '/api/login';
+const LOGOUT = '/api/logout';
 
 const MUSIC = '/api/music';
 

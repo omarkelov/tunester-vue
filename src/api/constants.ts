@@ -1,7 +1,8 @@
 const PROTOCOL = 'http';
-const HOST = 'localhost:8081';
+const HOSTNAME = location?.hostname || 'localhost';
+const PORT = '8081';
 
-export const SERVER_ADDRESS = `${PROTOCOL}://${HOST}`;
+export const SERVER_ADDRESS = `${PROTOCOL}://${HOSTNAME}:${PORT}`;
 
 const LOGIN = '/api/login';
 const LOGOUT = '/api/logout';

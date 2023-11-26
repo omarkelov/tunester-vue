@@ -24,7 +24,7 @@ export type Directory = {
 export type Track = {
     path: string;
     lastUpdated: string;
-    trackMeta: TrackMeta;
+    meta: TrackMeta;
 }
 
 export type TrackMeta = {
@@ -38,7 +38,7 @@ export type TrackMeta = {
     genre?: string;
     track?: number;
     date?: string;
-    trackMetaComment?: TrackMetaComment;
+    comment?: TrackMetaComment;
 }
 
 export type TrackMetaComment = {

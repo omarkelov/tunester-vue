@@ -1,3 +1,6 @@
+import { DeepPick } from 'ts-deep-pick';
+
+
 export enum UserRole {
     ADMIN = 'ADMIN',
     USER = 'USER',
@@ -52,3 +55,5 @@ export type TrackMetaCommentCut = {
     start?: number;
     end?: number;
 }
+
+export type TrackDeepRating = DeepPick<Track, 'meta.comment.rating'>;

@@ -8,8 +8,11 @@ const LOGIN = '/api/login';
 const LOGOUT = '/api/logout';
 
 const MUSIC = '/api/music';
+const TRACK = '/api/track';
+const TRACK_RATE = `${TRACK}/rate`;
 
 export const LOGIN_ADDRESS = `${SERVER_ADDRESS}${LOGIN}`;
 export const LOGOUT_ADDRESS = `${SERVER_ADDRESS}${LOGOUT}`;
 
 export const MUSIC_ADDRESS = `${SERVER_ADDRESS}${MUSIC}`;
+export const TRACK_RATE_ADDRESS = `${SERVER_ADDRESS}${TRACK_RATE}`;

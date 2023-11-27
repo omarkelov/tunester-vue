@@ -5,18 +5,31 @@ import { computed, ref } from 'vue';
 import Star from './Star.vue';
 
 
-const props = defineProps<{ rating: number }>();
+const props = defineProps<{
+    rating: number;
+    isActionable: boolean;
+}>();
 const emit = defineEmits<{ (e: 'rate', rating: number): void }>();
 
 const hoveredStarIdx = ref<number>();
 const filledStarsNumber = computed(() => hoveredStarIdx.value ?? props.rating);
 
+const onStarClicked = (starIdx: number) => {
+    if (props.isActionable) {
+        emit('rate', starIdx)
+    }
+};
+
 const onStarMouseEntered = (starIdx: number) => {
-    hoveredStarIdx.value = starIdx;
+    if (props.isActionable) {
+        hoveredStarIdx.value = starIdx;
+    }
 };
 
 const onStarMouseLeaved = () => {
-    hoveredStarIdx.value = undefined;
+    if (props.isActionable) {
+        hoveredStarIdx.value = undefined;
+    }
 };
 
 </script>
@@ -25,16 +38,18 @@ const onStarMouseLeaved = () => {
     <div class='flex'>
         <Star
             filled
+            :isSemiTransparent='!isActionable'
             v-for='i in filledStarsNumber'
             :key='i'
-            @click='() => emit("rate", i)'
+            @click='() => onStarClicked(i)'
             @mouseenter='() => onStarMouseEntered(i)'
             @mouseleave='onStarMouseLeaved'
         />
         <Star
+            :isSemiTransparent='!isActionable'
             v-for='i in 5 - filledStarsNumber'
             :key='i + filledStarsNumber'
-            @click='() => emit("rate", i + filledStarsNumber)'
+            @click='() => onStarClicked(i + filledStarsNumber)'
             @mouseenter='() => onStarMouseEntered(i + filledStarsNumber)'
             @mouseleave='onStarMouseLeaved'
         />

@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router';
 import { fetchGetMusic } from '../api/musicAPI';
 import { useWatchFetching } from '../hooks/useFetching';
 import { MUSIC, PATH } from '../router';
+import { usePlayerStore } from '../stores/player';
 import { Directory, Track } from '../util/types';
 
 
@@ -18,12 +19,10 @@ const {
     route
 );
 
-const emit = defineEmits<{
-    (e: 'playTrack', track: Track): void
-}>();
+const playerStore = usePlayerStore();
 
 const onTrackClicked = (track: Track) => {
-    emit('playTrack', track);
+    playerStore.setTrack(track);
 };
 
 </script>

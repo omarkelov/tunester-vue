@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { deepmerge } from "deepmerge-ts";
 
 import { fetchRateTrack } from '../api/trackAPI';
 import { useFetching } from '../hooks/useFetching';
@@ -8,6 +9,12 @@ import { Track, TrackDeepRating } from '../util/types';
 type State = {
     track?: Track;
     isTrackBeingRated: boolean;
+}
+
+const mergeRating = (track: Track, rating?: number) => {
+    const deepRating: TrackDeepRating = { meta: { comment: { rating } } };
+
+    return deepmerge(track, deepRating);
 }
 
 export const usePlayerStore = defineStore({
@@ -32,7 +39,7 @@ export const usePlayerStore = defineStore({
             }
 
             this.isTrackBeingRated = true;
-            Object.assign(this.track, { meta: { comment: { rating } } } as TrackDeepRating);
+            this.track = mergeRating(this.track, rating);
 
             const trackPath = this.track.path;
             const { error } = await useFetching(
@@ -42,7 +49,7 @@ export const usePlayerStore = defineStore({
 
             if (error) {
                 console.log(error);
-                Object.assign(this.track, { meta: { comment: { currentRating } } } as TrackDeepRating);
+                this.track = mergeRating(this.track, currentRating);
                 this.isTrackBeingRated = false;
                 return;
             }

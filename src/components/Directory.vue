@@ -1,25 +1,36 @@
 <script setup lang='ts'>
 
+import { watch } from 'vue';
 import { useRoute } from 'vue-router';
 
-import { fetchGetMusic } from '../api/musicAPI';
-import { useWatchFetching } from '../hooks/useFetching';
 import { MUSIC, PATH } from '../router';
+import { useDirectoryStore } from '../stores/directory';
 import { usePlayerStore } from '../stores/player';
-import { Directory, Track } from '../util/types';
+import { Track } from '../util/types';
 
 
-const route = useRoute();
-const {
-    isLoading,
-    result: directoryInfo,
-    error
-} = useWatchFetching<Directory>(
-    (signal: AbortSignal) => fetchGetMusic(route.params[PATH] as string | undefined ?? '', signal),
-    route
-);
-
+const directoryStore = useDirectoryStore();
 const playerStore = usePlayerStore();
+const route = useRoute();
+
+watch(
+    route,
+    async (_value, _oldValue, onCleanup) => {
+        const abortController = new AbortController();
+
+        onCleanup(() => {
+            abortController.abort();
+        });
+
+        directoryStore.loadDirectory(
+            route.params[PATH] as string | undefined ?? '',
+            abortController.signal,
+        );
+    },
+    {
+        immediate: true
+    },
+);
 
 const onTrackClicked = (track: Track) => {
     playerStore.setTrack(track);
@@ -28,18 +39,21 @@ const onTrackClicked = (track: Track) => {
 </script>
 
 <template>
-    <div v-if='isLoading'>
+    <div v-if='["initial", "loading"].includes(directoryStore.status)'>
         <span>Loading...</span>
     </div>
-    <div v-else-if='error?.length'>
-        <span>{{ error }}</span>
+    <div v-else-if='directoryStore.status === "error"'>
+        <span>{{ directoryStore.error }}</span>
     </div>
-    <div v-else-if='directoryInfo'>
+    <div v-else-if='directoryStore.status === "success"'>
         <div>Directory ({{ $route.params.path }})</div>
-        <div>{{ directoryInfo.path }}</div>
+        <div>{{ directoryStore.directory.path }}</div>
         <div>Directories:</div>
         <ul>
-            <li :key='directory.path' v-for='directory in directoryInfo.directories'>
+            <li
+                v-for='directory in directoryStore.directory.directories'
+                :key='directory.path'
+            >
                 <router-link :to='{ name: MUSIC, params: { [PATH]: directory.path } }'>
                     {{ directory.path }}
                 </router-link>
@@ -47,7 +61,10 @@ const onTrackClicked = (track: Track) => {
         </ul>
         <div>Tracks:</div>
         <ul>
-            <li :key='track.path' v-for='track in directoryInfo.tracks' @click='() => onTrackClicked(track)'>
+            <li
+                v-for='track in directoryStore.directory.tracks'
+                :key='track.path'
+                @click='() => onTrackClicked(track)'>
                 {{ track.path }}
             </li>
         </ul>

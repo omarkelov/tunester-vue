@@ -1,11 +1,12 @@
 import Cookies from 'js-cookie';
-import { defineStore } from 'pinia';
+import { defineStore, getActivePinia } from 'pinia';
 
 import { fetchLogin, fetchLogout } from '../api/authAPI';
 import { handleFetching } from '../util/fetching';
 import { Credentials, User } from '../util/types';
 
 
+const USER_STORE_NAME = 'user';
 const USER = 'user';
 const USER_COOKIE_EXPIRATION_TIME_DAYS = 180;
 
@@ -19,7 +20,7 @@ type State = {
 }
 
 export const useUserStore = defineStore({
-    id: 'user',
+    id: USER_STORE_NAME,
     state: (): State => ({
         user: savedUser,
     }),
@@ -38,7 +39,6 @@ export const useUserStore = defineStore({
             this.user = user;
 
             Cookies.set(USER, JSON.stringify(user), { expires: USER_COOKIE_EXPIRATION_TIME_DAYS });
-
             redirect();
         },
         async logout(signal: AbortSignal, redirect: () => void) {
@@ -55,8 +55,25 @@ export const useUserStore = defineStore({
             this.user = undefined;
 
             Cookies.remove(USER);
-
+            resetOtherStores();
             redirect();
         },
     },
 });
+
+const resetOtherStores = () => {
+    const activePinia = getActivePinia();
+
+    if (activePinia) {
+        Object.entries(activePinia.state.value)
+            .forEach(([storeName, state]) => {
+                if (storeName === USER_STORE_NAME) {
+                    return;
+                }
+
+                const storeDefinition = defineStore(storeName, state);
+                const store = storeDefinition(activePinia);
+                store.$reset();
+            });
+    }
+};

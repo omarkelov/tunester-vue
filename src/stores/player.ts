@@ -6,6 +6,8 @@ import { handleFetching } from '../util/fetching';
 import { Track, TrackDeepRating } from '../util/types';
 
 
+const PLAYER_STORE_NAME = 'player';
+
 type State = {
     track?: Track;
     isTrackBeingRated: boolean;
@@ -18,7 +20,7 @@ const mergeRating = (track: Track, rating?: number) => {
 }
 
 export const usePlayerStore = defineStore({
-    id: 'player',
+    id: PLAYER_STORE_NAME,
     state: (): State => ({
         track: undefined,
         isTrackBeingRated: false,

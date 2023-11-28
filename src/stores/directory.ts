@@ -5,6 +5,8 @@ import { handleFetching } from '../util/fetching';
 import { Directory } from '../util/types';
 
 
+const DIRECTORY_STORE_NAME = 'directory';
+
 type InitialState = {
     status: 'initial';
     directory: undefined;
@@ -28,7 +30,7 @@ type ErrorState = {
 type State = InitialState | SuccessState | LoadingState | ErrorState;
 
 export const useDirectoryStore = defineStore({
-    id: 'directory',
+    id: DIRECTORY_STORE_NAME,
     state: (): State => ({
         status: 'initial',
         directory: undefined,

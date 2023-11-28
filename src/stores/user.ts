@@ -1,3 +1,4 @@
+import Cookies from 'js-cookie';
 import { defineStore } from 'pinia';
 
 import { fetchLogin, fetchLogout } from '../api/authAPI';
@@ -5,7 +6,10 @@ import { handleFetching } from '../util/fetching';
 import { Credentials, User } from '../util/types';
 
 
-const savedUserStr = localStorage.getItem('user');
+const USER = 'user';
+const USER_COOKIE_EXPIRATION_TIME_DAYS = 180;
+
+const savedUserStr = Cookies.get(USER);
 const savedUser = savedUserStr
     ? JSON.parse(savedUserStr)
     : undefined;
@@ -33,7 +37,7 @@ export const useUserStore = defineStore({
 
             this.user = user;
 
-            localStorage.setItem('user', JSON.stringify(user));
+            Cookies.set(USER, JSON.stringify(user), { expires: USER_COOKIE_EXPIRATION_TIME_DAYS });
 
             redirect();
         },
@@ -50,7 +54,7 @@ export const useUserStore = defineStore({
 
             this.user = undefined;
 
-            localStorage.removeItem('user');
+            Cookies.remove(USER);
 
             redirect();
         },

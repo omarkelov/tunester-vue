@@ -2,33 +2,22 @@
 
 import { useRouter } from 'vue-router';
 
-import { fetchLogout } from '../api/authAPI';
 import { useAbortController } from '../hooks/useAbortController';
 import { LOGIN } from '../router';
-import { handleFetching } from '../util/fetching';
+import { useUserStore } from '../stores/user';
 
 
+const userStore = useUserStore();
+const { signal } = useAbortController();
 const router = useRouter();
-const abortController = useAbortController();
 
-const onLogoutClicked = async () => {
-    const { error } = await handleFetching(
-        (signal: AbortSignal) => fetchLogout(signal),
-        abortController.signal,
-    );
-
-    if (error) {
-        console.log(error);
-        return;
-    }
-
-    localStorage.removeItem('user');
-
-    router.push({ name: LOGIN });
-};
+const onLogoutClicked = async () => userStore.logout(
+    signal,
+    () => router.push({ name: LOGIN })
+);
 
 </script>
 
 <template>
-    <button @click='onLogoutClicked'>Logout</button>
+    <button @click='onLogoutClicked'>Logout ({{ userStore.user?.username }})</button>
 </template>

@@ -38,7 +38,7 @@ export const useDirectoryStore = defineStore({
         async loadDirectory(path: string, signal: AbortSignal) {
             this.$patch({ status: 'loading' });
 
-            const { result, error } = await handleFetching<Directory>(
+            const { result: directory, error } = await handleFetching<Directory>(
                 (signal: AbortSignal) => fetchGetDirectory(path, signal),
                 signal,
             );
@@ -54,7 +54,7 @@ export const useDirectoryStore = defineStore({
 
             this.$patch({
                 status: 'success',
-                directory: result,
+                directory,
             });
         },
     },

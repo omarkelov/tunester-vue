@@ -8,6 +8,7 @@ import {
 
 import LoginPage from './pages/LoginPage.vue';
 import MusicPage from './pages/MusicPage.vue';
+import { useUserStore } from './stores/user';
 
 
 export const LOGIN = 'login';
@@ -56,4 +57,8 @@ const navigateAnonymous = (to: RouteLocationNormalized, next: NavigationGuardNex
     }
 };
 
-router.beforeEach((to, _from, next) => (localStorage.getItem('user') ? navigateUser : navigateAnonymous)(to, next));
+router.beforeEach((to, _from, next) => {
+    const userStore = useUserStore();
+
+    return (userStore.user ? navigateUser : navigateAnonymous)(to, next);
+});

@@ -3,39 +3,28 @@
 import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
-import { fetchLogin } from '../api/authAPI.js';
 import { useAbortController } from '../hooks/useAbortController.js';
 import { MUSIC } from '../router';
-import { handleFetching } from '../util/fetching';
-import { User } from '../util/types.js';
+import { useUserStore } from '../stores/user';
 
 
 const loginRef = ref<string>('');
 const passwordRef = ref<string>('');
 
-const abortController = useAbortController();
+const userStore = useUserStore();
+const { signal } = useAbortController();
 
 const route = useRoute();
 const router = useRouter();
 
-const onFormSubmit = async () => {
-    const { result: user, error } = await handleFetching<User>(
-        (signal: AbortSignal) => fetchLogin({
-            login: loginRef.value,
-            password: passwordRef.value,
-        }, signal),
-        abortController.signal,
-    );
-
-    if (!user) {
-        console.log(error);
-        return;
-    }
-
-    localStorage.setItem('user', JSON.stringify(user));
-
-    router.replace(route.query.redirect as string | undefined ?? { name: MUSIC });
-};
+const onFormSubmit = async () => userStore.login(
+    {
+        login: loginRef.value,
+        password: passwordRef.value,
+    },
+    signal,
+    () => router.replace(route.query.redirect as string | undefined ?? { name: MUSIC })
+);
 
 </script>
 

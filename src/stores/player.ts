@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { deepmerge } from "deepmerge-ts";
 
 import { fetchRateTrack } from '../api/trackAPI';
-import { useFetching } from '../hooks/useFetching';
+import { handleFetching } from '../util/fetching';
 import { Track, TrackDeepRating } from '../util/types';
 
 
@@ -42,7 +42,7 @@ export const usePlayerStore = defineStore({
             this.track = mergeRating(this.track, rating);
 
             const trackPath = this.track.path;
-            const { error } = await useFetching(
+            const { error } = await handleFetching(
                 (signal: AbortSignal) => fetchRateTrack(trackPath, rating, signal),
                 signal,
             );

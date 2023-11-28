@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 
 import { fetchGetMusic } from '../api/musicAPI';
-import { useFetching } from '../hooks/useFetching';
+import { handleFetching } from '../util/fetching';
 import { Directory } from '../util/types';
 
 
@@ -38,7 +38,7 @@ export const useDirectoryStore = defineStore({
         async loadDirectory(path: string, signal: AbortSignal) {
             this.$patch({ status: 'loading' });
 
-            const { result, error } = await useFetching<Directory>(
+            const { result, error } = await handleFetching<Directory>(
                 (signal: AbortSignal) => fetchGetMusic(path, signal),
                 signal,
             );

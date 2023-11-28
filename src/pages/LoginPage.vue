@@ -5,8 +5,8 @@ import { useRoute, useRouter } from 'vue-router';
 
 import { fetchLogin } from '../api/authAPI.js';
 import { useAbortController } from '../hooks/useAbortController.js';
-import { useFetching } from '../hooks/useFetching.js';
 import { MUSIC } from '../router';
+import { handleFetching } from '../util/fetching';
 import { User } from '../util/types.js';
 
 
@@ -19,7 +19,7 @@ const route = useRoute();
 const router = useRouter();
 
 const onFormSubmit = async () => {
-    const { result: user, error } = await useFetching<User>(
+    const { result: user, error } = await handleFetching<User>(
         (signal: AbortSignal) => fetchLogin({
             login: loginRef.value,
             password: passwordRef.value,

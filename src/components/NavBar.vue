@@ -4,15 +4,15 @@ import { useRouter } from 'vue-router';
 
 import { fetchLogout } from '../api/authAPI';
 import { useAbortController } from '../hooks/useAbortController';
-import { useFetching } from '../hooks/useFetching';
 import { LOGIN } from '../router';
+import { handleFetching } from '../util/fetching';
 
 
 const router = useRouter();
 const abortController = useAbortController();
 
 const onLogoutClicked = async () => {
-    const { error } = await useFetching(
+    const { error } = await handleFetching(
         (signal: AbortSignal) => fetchLogout(signal),
         abortController.signal,
     );

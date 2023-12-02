@@ -8,16 +8,13 @@ defineProps<{
     isSemiTransparent: boolean;
 }>();
 
-const borderColor = '#f93358';
-const fillColor = '#fc4e6f';
-
 </script>
 
 <template>
     <Star
         class='stroke-1 cursor-pointer'
-        :color='borderColor'
-        :fill='filled ? fillColor : undefined'
+        color='#f93358'
+        :fill='filled ? "#fc4e6f" : undefined'
         :opacity='isSemiTransparent ? 0.5 : 1'
         :size='32'
     />

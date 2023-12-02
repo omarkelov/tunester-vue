@@ -2,7 +2,7 @@
 
 import { computed, ref } from 'vue';
 
-import Star from './Star.vue';
+import Star from './icons/Star.vue';
 
 
 const props = defineProps<{
@@ -16,7 +16,7 @@ const filledStarsNumber = computed(() => hoveredStarIdx.value ?? props.rating);
 
 const onStarClicked = (starIdx: number) => {
     if (props.isActionable) {
-        emit('rate', starIdx)
+        emit('rate', starIdx);
     }
 };
 

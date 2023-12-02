@@ -12,3 +12,13 @@ export const trimFileExtension = (str?: string) => {
         ? str.slice(0, lastDotIdx)
         : str;
 };
+
+export const convertTime = (seconds: number) => {
+    const time = new Date(seconds * 1000)
+        .toISOString()
+        .substring(seconds < 3600 ? 14 : 11, 19);
+
+    return time[0] === '0'
+        ? time.substring(1)
+        : time;
+};

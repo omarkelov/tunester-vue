@@ -8,6 +8,10 @@ export const clamp = (value: number | undefined, min: number, max: number) => {
     return Math.max(min, Math.min(value, max))
 };
 
-export const roundUpTo = (value: number, p: number) => {
-    return Math.round(value / p) * p;
+export const roundUpTo = (value: number, r?: number) => {
+    if (!r) {
+        return value;
+    }
+
+    return Math.round(value / r) * r;
 };

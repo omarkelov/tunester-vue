@@ -46,15 +46,37 @@ const onVolumeUpdated = (value: number) => {
 };
 
 const onStopClicked = () => {
+    if (!audioRef.value) {
+        return;
+    }
 
+    isPlayingRef.value = false;
+    audioRef.value.currentTime = 0;
+    audioRef.value.pause();
 };
 
 const onReplayClicked = () => {
+    if (!audioRef.value) {
+        return;
+    }
 
+    isPlayingRef.value = true;
+    audioRef.value.currentTime = 0;
+    audioRef.value.play();
 };
 
 const onPlayOrPauseClicked = () => {
+    if (!audioRef.value) {
+        return;
+    }
+
     isPlayingRef.value = !isPlayingRef.value;
+
+    if (isPlayingRef.value) {
+        audioRef.value.play();
+    } else {
+        audioRef.value.pause();
+    }
 };
 
 const onPreviousClicked = () => {
@@ -102,7 +124,6 @@ const onRepeatClicked = () => {
             :src='playerStore.track ? encodeURI(`${SERVER_ADDRESS}/api/track/${playerStore.track?.path}`) : undefined'
             crossOrigin='use-credentials'
             controls
-            autoplay
         ></audio>
         <div class='mt-10'><!-- REMOVE --></div>
         <div class='p-4 pb-3 w-full flex flex-col gap-3 bg-neutral-900'>

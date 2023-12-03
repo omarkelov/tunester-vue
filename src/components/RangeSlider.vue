@@ -26,39 +26,40 @@ const userValueRef = ref<number>(props.value);
 const sliderRef = ref<HTMLDivElement>();
 
 const onMouseDown = (event: MouseEvent) => {
-    if (!sliderRef.value) {
+    if (!sliderRef.value || event.button !== 0) {
         return;
     }
 
     const { pointerEvents, userSelect } = document.body.style;
 
-    const updateValue = ({ clientX }: MouseEvent, isEmitting?: boolean) => {
-        console.log('inside updateValue');
-        console.log({isEmitting});
-        if (!sliderRef.value) {
+    const updateValue = (event: MouseEvent, skipEmitting?: boolean) => {
+        if (!sliderRef.value || event.button !== 0) {
             return;
         }
 
         const { left, width } = sliderRef.value.getBoundingClientRect();
-        const value = clamp(roundUpTo((clientX - left) / width, props.step), 0, 1);
+        const value = clamp(roundUpTo((event.clientX - left) / width, props.step), 0, 1);
 
         if (userValueRef.value === value) {
-            console.log('userValueRef.value === value');
             return;
         }
 
         userValueRef.value = value;
 
-        emit('update', {
-            value: userValueRef.value,
-            isLastInARow: false,
-        });
+        if (!skipEmitting) {
+            emit('update', {
+                value: userValueRef.value,
+                isLastInARow: false,
+            });
+        }
     };
 
     const onMouseUp = (event: MouseEvent) => {
-        console.log('before updateValue');
+        if (event.button !== 0) {
+            return;
+        }
+
         updateValue(event, true);
-        console.log('after updateValue');
 
         window.removeEventListener('mousemove', updateValue);
         window.removeEventListener('mouseup', onMouseUp);
@@ -96,11 +97,11 @@ const onMouseDown = (event: MouseEvent) => {
         >
             <div
                 class='h-full bg-neutral-300'
-                :style='`width: ${Math.round((isUserUpdatingRef ? userValueRef : value) * 100)}%`'
+                :style='`width: ${(isUserUpdatingRef ? userValueRef : value) * 100}%;`'
             ></div>
             <div
                 class='h-full bg-neutral-600'
-                :style='`width: ${Math.round((1 - (isUserUpdatingRef ? userValueRef : value)) * 100)}%`'
+                :style='`width: ${(1 - (isUserUpdatingRef ? userValueRef : value)) * 100}%;`'
             ></div>
         </div>
     </div>

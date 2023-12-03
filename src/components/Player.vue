@@ -1,6 +1,6 @@
 <script setup lang='ts'>
 
-import { onUnmounted, ref, watch, watchEffect } from 'vue';
+import { onUnmounted, ref, watch } from 'vue';
 
 import { SERVER_ADDRESS } from '../api/constants';
 import { useAbortController } from '../hooks/useAbortController';
@@ -20,96 +20,31 @@ import RangeSlider, { UpdateValue } from './RangeSlider.vue';
 import Rating from './Rating.vue';
 
 
-const initialTime = 0;
-const initialVolume = 0.5;
-
 const { signal } = useAbortController();
 const playerStore = usePlayerStore();
 const audioRef = ref<HTMLAudioElement>();
-const timeRef = ref<number>(initialTime);
-const volumeRef = ref<number>(initialVolume);
-const isPlayingRef = ref<boolean>(false);
-const shuffleStateRef = ref<ShuffleState>(ShuffleState.NO);
-const repeatStateRef = ref<RepeatState>(RepeatState.NO);
+const shuffleStateRef = ref(ShuffleState.NO);
+const repeatStateRef = ref(RepeatState.NO);
 
-let timerId: number;
-let duration: number;
+watch(audioRef, () => playerStore.setAudioElement(audioRef.value));
 
-onUnmounted(() => clearInterval(timerId));
-
-watchEffect(() => {
-    if (audioRef.value) {
-        audioRef.value.volume = volumeRef.value / 2;
-    }
-});
-
-watch(isPlayingRef, () => {
-    console.log('watch(isPlayingRef', Math.random());
-    if (isPlayingRef.value) {
-        audioRef.value?.play();
-        timerId = setInterval(() => {
-            console.log((audioRef.value?.currentTime ?? 0) / (audioRef.value?.duration ?? 0));
-            if (!audioRef.value || !audioRef.value.duration) {
-                return;
-            }
-
-            timeRef.value = audioRef.value.currentTime / audioRef.value.duration;
-        }, 1000);
-        console.log('setInterval', timerId);
-    } else {
-        audioRef.value?.pause();
-        clearInterval(timerId);
-        console.log('clearInterval', timerId);
-    }
-});
-
-const updateTime = (value: number) => {
-    if (!audioRef.value) {
-        return;
-    }
-
-    audioRef.value.currentTime = value * audioRef.value.duration;
-    timeRef.value = value;
-};
+onUnmounted(() => playerStore.stop());
 
 const onTimeUpdated = ({ value, isLastInARow }: UpdateValue) => {
     if (!isLastInARow) {
         return;
     }
 
-    updateTime(value);
+    playerStore.seek(value);
 };
 
-const onVolumeUpdated = ({ value }: UpdateValue) => {
-    volumeRef.value = value;
-};
+const onVolumeUpdated = ({ value }: UpdateValue) => playerStore.setVolume(value);
 
-const onStopClicked = () => {
-    if (!audioRef.value) {
-        return;
-    }
+const onStopClicked = () => playerStore.stop();
 
-    isPlayingRef.value = false;
-    updateTime(0);
-};
+const onReplayClicked = () => playerStore.replay();
 
-const onReplayClicked = () => {
-    if (!audioRef.value) {
-        return;
-    }
-
-    isPlayingRef.value = true;
-    updateTime(0);
-};
-
-const onPlayOrPauseClicked = () => {
-    if (!audioRef.value) {
-        return;
-    }
-
-    isPlayingRef.value = !isPlayingRef.value;
-    console.log('onPlayOrPauseClicked', isPlayingRef.value);
-};
+const onPlayOrPauseClicked = () => playerStore.toggle();
 
 const onPreviousClicked = () => {
 
@@ -176,7 +111,7 @@ const onRepeatClicked = () => {
                     <Stop @click='onStopClicked' />
                     <Refresh @click='onReplayClicked' />
                     <PlayOrPause
-                        :is-playing='isPlayingRef'
+                        :is-playing='playerStore.isPlaying'
                         @click='onPlayOrPauseClicked'
                     />
                     <Previous @click='onPreviousClicked' />
@@ -184,21 +119,17 @@ const onRepeatClicked = () => {
                 </div>
                 <div class='w-full flex gap-1 items-center'>
                     <RangeSlider
-                        :value='timeRef'
+                        :value='playerStore.time'
                         v-on:update='onTimeUpdated'
-                        :step='.005'
                     />
-                    <div
-                        class='mb-0.5 shrink-0'
-                        :set='duration = playerStore.track?.meta.duration || audioRef?.duration || 0'
-                    >
+                    <div class='mb-0.5 shrink-0'>
                         <span
-                            v-if='timeRef * duration < 600'
+                            v-if='playerStore.time * playerStore.duration < 600'
                             class='invisible pointer-events-none'
                         >1</span>
-                        <span>{{ convertTime(timeRef * duration) }}</span>
+                        <span>{{ convertTime(playerStore.time * playerStore.duration) }}</span>
                         <span> / </span>
-                        <span>{{ convertTime(duration) }}</span>
+                        <span>{{ convertTime(playerStore.duration) }}</span>
                     </div>
                 </div>
                 <div class='ml-auto flex gap-5 items-center'>
@@ -215,21 +146,21 @@ const onRepeatClicked = () => {
                     <div class='flex gap-1 items-center'>
                         <div class='w-20'>
                             <RangeSlider
-                                :value='volumeRef'
+                                :value='playerStore.volume'
                                 v-on:update='onVolumeUpdated'
                                 :step='.05'
                             />
                         </div>
                         <div>
                             <span
-                                v-if='convertToPercent(volumeRef) < 10'
+                                v-if='convertToPercent(playerStore.volume) < 10'
                                 class='invisible pointer-events-none'
                             >10</span>
                             <span
-                                v-else-if='convertToPercent(volumeRef) < 100'
+                                v-else-if='convertToPercent(playerStore.volume) < 100'
                                 class='invisible pointer-events-none'
                             >1</span>
-                            <span class='mb-0.5'>{{ convertToPercent(volumeRef) }}%</span>
+                            <span class='mb-0.5'>{{ convertToPercent(playerStore.volume) }}%</span>
                         </div>
                     </div>
                 </div>

@@ -2,6 +2,7 @@ import { deepmerge } from "deepmerge-ts";
 import { defineStore } from 'pinia';
 
 import { fetchRateTrack } from '../api/trackAPI';
+import { abortGroupControllers, createAbortController, removeAbortController } from '../util/aborting';
 import { handleFetching } from '../util/fetching';
 import { Track, TrackDeepRating } from '../util/types';
 
@@ -37,7 +38,7 @@ export const usePlayerStore = defineStore({
             this.stop();
             this.track = track;
         },
-        async rateTrack(rating: number, signal: AbortSignal) {
+        async rateTrack(rating: number) {
             if (!this.track) {
                 return;
             }
@@ -52,9 +53,10 @@ export const usePlayerStore = defineStore({
             this.track = mergeRating(this.track, rating);
 
             const trackPath = this.track.path;
+            const abortController = createAbortController(PLAYER_STORE_NAME);
             const { error } = await handleFetching(
                 (signal: AbortSignal) => fetchRateTrack(trackPath, rating, signal),
-                signal,
+                abortController.signal,
             );
 
             if (error) {
@@ -64,6 +66,7 @@ export const usePlayerStore = defineStore({
                 return;
             }
 
+            removeAbortController(PLAYER_STORE_NAME, abortController);
             this.isTrackBeingRated = false;
         },
         setAudioElement(audioElement: HTMLAudioElement | undefined) {
@@ -126,6 +129,10 @@ export const usePlayerStore = defineStore({
 
             this.volume = volume;
             this.audioElement.volume = volume / 2;
+        },
+        dispose() {
+            this.stop();
+            abortGroupControllers(PLAYER_STORE_NAME);
         },
     },
 });

@@ -3,7 +3,6 @@
 import { onUnmounted, ref, watch } from 'vue';
 
 import { SERVER_ADDRESS } from '../api/constants';
-import { useAbortController } from '../hooks/useAbortController';
 import { usePlayerStore } from '../stores/player';
 import { clamp, convertToPercent } from '../util/numbers';
 import { convertTime, trimFileExtension } from '../util/strings';
@@ -20,7 +19,6 @@ import RangeSlider, { UpdateValue } from './RangeSlider.vue';
 import Rating from './Rating.vue';
 
 
-const { signal } = useAbortController();
 const playerStore = usePlayerStore();
 const audioRef = ref<HTMLAudioElement>();
 const shuffleStateRef = ref(ShuffleState.NO);
@@ -28,7 +26,7 @@ const repeatStateRef = ref(RepeatState.NO);
 
 watch(audioRef, () => playerStore.setAudioElement(audioRef.value));
 
-onUnmounted(() => playerStore.stop());
+onUnmounted(() => playerStore.dispose());
 
 const onTimeUpdated = ({ value, isLastInARow }: UpdateValue) => {
     if (!isLastInARow) {
@@ -103,7 +101,7 @@ const onRepeatClicked = () => {
                 <Rating
                     :rating='clamp(playerStore.track?.meta.comment?.rating, 0, 5)'
                     :isActionable='!playerStore.isTrackBeingRated'
-                    v-on:rate='rating => playerStore.rateTrack(rating, signal)'
+                    v-on:rate='rating => playerStore.rateTrack(rating)'
                 />
             </div>
             <div class='w-full flex gap-5'>

@@ -21,12 +21,12 @@ const onStarClicked = (starIdx: number) => {
 };
 
 const onStarMouseEntered = (starIdx: number) => {
-    if (props.isActionable) {
+    if (props.isActionable && starIdx !== hoveredStarIdx.value) {
         hoveredStarIdx.value = starIdx;
     }
 };
 
-const onStarMouseLeaved = () => {
+const onStarsMouseLeaved = () => {
     if (props.isActionable) {
         hoveredStarIdx.value = undefined;
     }
@@ -35,7 +35,10 @@ const onStarMouseLeaved = () => {
 </script>
 
 <template>
-    <div class='flex'>
+    <div
+        class='flex'
+        @mouseleave='onStarsMouseLeaved'
+    >
         <Star
             filled
             :isSemiTransparent='!isActionable'
@@ -43,7 +46,6 @@ const onStarMouseLeaved = () => {
             :key='i'
             @click='() => onStarClicked(i)'
             @mouseenter='() => onStarMouseEntered(i)'
-            @mouseleave='onStarMouseLeaved'
         />
         <Star
             :isSemiTransparent='!isActionable'
@@ -51,7 +53,6 @@ const onStarMouseLeaved = () => {
             :key='i + filledStarsNumber'
             @click='() => onStarClicked(i + filledStarsNumber)'
             @mouseenter='() => onStarMouseEntered(i + filledStarsNumber)'
-            @mouseleave='onStarMouseLeaved'
         />
     </div>
 </template>

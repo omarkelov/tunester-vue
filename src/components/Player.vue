@@ -1,6 +1,6 @@
 <script setup lang='ts'>
 
-import { onUnmounted, onUpdated, ref, watch } from 'vue';
+import { onMounted, onUnmounted, onUpdated, ref } from 'vue';
 
 import { usePlayerStore } from '../stores/player';
 import { clamp, convertToPercent } from '../util/numbers';
@@ -27,7 +27,7 @@ const audioRef = ref<HTMLAudioElement>();
 const shuffleStateRef = ref(ShuffleState.NO);
 const repeatStateRef = ref(RepeatState.NO);
 
-watch(audioRef, () => playerStore.setAudioElement(audioRef.value));
+onMounted(() => playerStore.setAudioElement(audioRef.value));
 onUnmounted(() => playerStore.dispose());
 
 const onTimeUpdated = ({ value, isLastInARow }: UpdateValue) => {

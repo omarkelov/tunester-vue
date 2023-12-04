@@ -1,6 +1,6 @@
 <script setup lang='ts'>
 
-import { onUnmounted, ref, watch } from 'vue';
+import { onUnmounted, onUpdated, ref, watch } from 'vue';
 
 import { usePlayerStore } from '../stores/player';
 import { clamp, convertToPercent } from '../util/numbers';
@@ -17,6 +17,10 @@ import Stop from './icons/Stop.vue';
 import RangeSlider, { UpdateValue } from './RangeSlider.vue';
 import Rating from './Rating.vue';
 
+const emit = defineEmits<{ (e: 'onWrapperHeightUpdated', height?: number): void }>();
+const wrapperRef = ref<HTMLDivElement>();
+
+onUpdated(() => emit('onWrapperHeightUpdated', wrapperRef.value?.getBoundingClientRect().height));
 
 const playerStore = usePlayerStore();
 const audioRef = ref<HTMLAudioElement>();
@@ -70,7 +74,10 @@ const onRepeatClicked = () => {
 </script>
 
 <template>
-    <div class='fixed bottom-0 w-full flex flex-col gap-2 items-center'>
+    <div
+        ref='wrapperRef'
+        class='fixed bottom-0 w-full flex flex-col gap-2 items-center'
+    >
         <p v-if='playerStore.isTrackBeingRated'>Loading...</p>
         <audio
             class='w-full'

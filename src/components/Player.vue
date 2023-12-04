@@ -2,7 +2,6 @@
 
 import { onUnmounted, ref, watch } from 'vue';
 
-import { SERVER_ADDRESS } from '../api/constants';
 import { usePlayerStore } from '../stores/player';
 import { clamp, convertToPercent } from '../util/numbers';
 import { convertTime, trimFileExtension } from '../util/strings';
@@ -25,7 +24,6 @@ const shuffleStateRef = ref(ShuffleState.NO);
 const repeatStateRef = ref(RepeatState.NO);
 
 watch(audioRef, () => playerStore.setAudioElement(audioRef.value));
-
 onUnmounted(() => playerStore.dispose());
 
 const onTimeUpdated = ({ value, isLastInARow }: UpdateValue) => {
@@ -37,20 +35,11 @@ const onTimeUpdated = ({ value, isLastInARow }: UpdateValue) => {
 };
 
 const onVolumeUpdated = ({ value }: UpdateValue) => playerStore.setVolume(value);
-
 const onStopClicked = () => playerStore.stop();
-
 const onReplayClicked = () => playerStore.replay();
-
 const onPlayOrPauseClicked = () => playerStore.toggle();
-
-const onPreviousClicked = () => {
-
-};
-
-const onNextClicked = () => {
-
-};
+const onPreviousClicked = () => playerStore.playPrevious();
+const onNextClicked = () => playerStore.playNext();
 
 const onShuffleClicked = () => {
     shuffleStateRef.value = (() => {
@@ -86,11 +75,8 @@ const onRepeatClicked = () => {
         <audio
             class='w-full'
             ref='audioRef'
-            :src='playerStore.track ? encodeURI(`${SERVER_ADDRESS}/api/track/${playerStore.track?.path}`) : undefined'
             crossOrigin='use-credentials'
-            controls
         ></audio>
-        <div class='mt-10'><!-- REMOVE --></div>
         <div class='p-4 pb-3 w-full flex flex-col gap-3 bg-neutral-900'>
             <div class='flex gap-3 justify-center items-center'>
                 <Music

@@ -1,6 +1,7 @@
 import { deepmerge } from "deepmerge-ts";
 import { defineStore } from 'pinia';
 
+import { SERVER_ADDRESS } from '../api/constants';
 import { fetchRateTrack } from '../api/trackAPI';
 import { abortGroupControllers, createAbortController, removeAbortController } from '../util/aborting';
 import { handleFetching } from '../util/fetching';
@@ -49,6 +50,8 @@ export const usePlayerStore = defineStore({
             } else {
                 this.playlist = playlist;
             }
+
+            this.play();
         },
         async rateTrack(rating: number) {
             if (!this.playlist || !this.track) {
@@ -94,19 +97,29 @@ export const usePlayerStore = defineStore({
             }
         },
         play() {
-            if (!this.audioElement || !this.playlist || this.isPlaying) {
+            if (!this.audioElement || !this.playlist || !this.track || this.isPlaying) {
                 return;
             }
 
-            this.isPlaying = true;
+            const trackSrc = encodeURI(`${SERVER_ADDRESS}/api/track/${this.track.path}`);
+
+            if (this.audioElement.src !== trackSrc) {
+                this.audioElement.src = trackSrc;
+            }
+
             this.audioElement.play();
+            this.isPlaying = true;
 
             timerId = setInterval(() => {
                 if (!this.audioElement || !this.playlist || !this.audioElement.duration) {
                     return;
                 }
 
-                this.time = this.audioElement.currentTime / this.audioElement.duration;
+                if (this.audioElement.ended) {
+                    this.playNext();
+                } else {
+                    this.time = this.audioElement.currentTime / this.audioElement.duration;
+                }
             }, 100);
         },
         pause() {
@@ -133,6 +146,36 @@ export const usePlayerStore = defineStore({
 
             this.audioElement.currentTime = seconds * this.audioElement.duration;
             this.time = seconds;
+        },
+        playPrevious() {
+            if (!this.playlist) {
+                return;
+            }
+
+            let previousIdx = this.playlist.idx - 1;
+
+            if (previousIdx < 0) {
+                previousIdx = this.playlist.tracks.length - 1;
+            }
+
+            this.stop();
+            this.playlist.idx = previousIdx;
+            this.play();
+        },
+        playNext() {
+            if (!this.playlist) {
+                return;
+            }
+
+            let nextIdx = this.playlist.idx + 1;
+
+            if (nextIdx >= this.playlist.tracks.length) {
+                nextIdx = 0;
+            }
+
+            this.stop();
+            this.playlist.idx = nextIdx;
+            this.play();
         },
         setVolume(volume: number) {
             if (!this.audioElement) {

@@ -3,6 +3,8 @@ import { defineStore } from 'pinia';
 
 import { SERVER_ADDRESS } from '../api/constants';
 import { fetchRateTrack } from '../api/trackAPI';
+import { RepeatState } from '../components/icons/Repeat.vue';
+import { ShuffleState } from '../components/icons/Shuffle.vue';
 import { abortGroupControllers, createAbortController, removeAbortController } from '../util/aborting';
 import { handleFetching } from '../util/fetching';
 import { Playlist, Track, TrackDeepRating } from '../util/types';
@@ -18,6 +20,8 @@ type State = {
     audioElement?: HTMLAudioElement;
     isPlaying: boolean;
     time: number;
+    shuffleState: ShuffleState;
+    repeatState: RepeatState;
     volume: number;
 }
 
@@ -29,6 +33,8 @@ export const usePlayerStore = defineStore({
         audioElement: undefined,
         isPlaying: false,
         time: 0,
+        shuffleState: ShuffleState.NO,
+        repeatState: RepeatState.NO,
         volume: 0.5,
     }),
     getters: {
@@ -176,6 +182,32 @@ export const usePlayerStore = defineStore({
             this.stop();
             this.playlist.idx = nextIdx;
             this.play();
+        },
+        switchShuffleState() {
+            switch (this.shuffleState) {
+                case ShuffleState.NO:
+                    this.shuffleState = ShuffleState.SHUFFLE_DIRECTORY;
+                    break;
+                case ShuffleState.SHUFFLE_DIRECTORY:
+                    this.shuffleState = ShuffleState.SHUFFLE_GLOBALLY;
+                    break;
+                case ShuffleState.SHUFFLE_GLOBALLY:
+                    this.shuffleState = ShuffleState.NO;
+                    break;
+            }
+        },
+        switchRepeatState() {
+            switch (this.repeatState) {
+                case RepeatState.NO:
+                    this.repeatState = RepeatState.CYCLE;
+                    break;
+                case RepeatState.CYCLE:
+                    this.repeatState = RepeatState.SINGLE;
+                    break;
+                case RepeatState.SINGLE:
+                    this.repeatState = RepeatState.NO;
+                    break;
+            }
         },
         setVolume(volume: number) {
             if (!this.audioElement) {

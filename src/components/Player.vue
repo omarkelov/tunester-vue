@@ -10,12 +10,13 @@ import Music from './icons/Music.vue';
 import Next from './icons/Next.vue';
 import Previous from './icons/Previous.vue';
 import Refresh from './icons/Refresh.vue';
-import Repeat, { RepeatState } from './icons/Repeat.vue';
+import Repeat from './icons/Repeat.vue';
 import PlayOrPause from './icons/PlayOrPause.vue';
-import Shuffle, { ShuffleState } from './icons/Shuffle.vue';
+import Shuffle from './icons/Shuffle.vue';
 import Stop from './icons/Stop.vue';
 import RangeSlider, { UpdateValue } from './RangeSlider.vue';
 import Rating from './Rating.vue';
+
 
 const emit = defineEmits<{ (e: 'onWrapperHeightUpdated', height?: number): void }>();
 const wrapperRef = ref<HTMLDivElement>();
@@ -24,8 +25,6 @@ onUpdated(() => emit('onWrapperHeightUpdated', wrapperRef.value?.getBoundingClie
 
 const playerStore = usePlayerStore();
 const audioRef = ref<HTMLAudioElement>();
-const shuffleStateRef = ref(ShuffleState.NO);
-const repeatStateRef = ref(RepeatState.NO);
 
 onMounted(() => playerStore.setAudioElement(audioRef.value));
 onUnmounted(() => playerStore.dispose());
@@ -44,32 +43,8 @@ const onReplayClicked = () => playerStore.replay();
 const onPlayOrPauseClicked = () => playerStore.toggle();
 const onPreviousClicked = () => playerStore.playPrevious();
 const onNextClicked = () => playerStore.playNext();
-
-const onShuffleClicked = () => {
-    shuffleStateRef.value = (() => {
-        switch (shuffleStateRef.value) {
-            case ShuffleState.NO:
-                return ShuffleState.SHUFFLE_DIRECTORY;
-            case ShuffleState.SHUFFLE_DIRECTORY:
-                return ShuffleState.SHUFFLE_GLOBALLY;
-            case ShuffleState.SHUFFLE_GLOBALLY:
-                return ShuffleState.NO;
-        }
-    })();
-};
-
-const onRepeatClicked = () => {
-    repeatStateRef.value = (() => {
-        switch (repeatStateRef.value) {
-            case RepeatState.NO:
-                return RepeatState.CYCLE;
-            case RepeatState.CYCLE:
-                return RepeatState.SINGLE;
-            case RepeatState.SINGLE:
-                return RepeatState.NO;
-        }
-    })();
-};
+const onShuffleClicked = () => playerStore.switchShuffleState();
+const onRepeatClicked = () => playerStore.switchRepeatState();
 
 </script>
 
@@ -126,11 +101,11 @@ const onRepeatClicked = () => {
                 <div class='ml-auto flex gap-5 items-center'>
                     <div class='flex gap-2 items-center'>
                         <Shuffle
-                            :shuffle-state='shuffleStateRef'
+                            :shuffle-state='playerStore.shuffleState'
                             @click='onShuffleClicked'
                         />
                         <Repeat
-                            :repeat-state='repeatStateRef'
+                            :repeat-state='playerStore.repeatState'
                             @click='onRepeatClicked'
                         />
                     </div>

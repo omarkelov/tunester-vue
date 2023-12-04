@@ -6,7 +6,6 @@ import { useRoute } from 'vue-router';
 import { MUSIC, PATH } from '../router';
 import { useDirectoryStore } from '../stores/directory';
 import { usePlayerStore } from '../stores/player';
-import { Track } from '../util/types';
 
 
 const directoryStore = useDirectoryStore();
@@ -32,8 +31,15 @@ watch(
     },
 );
 
-const onTrackClicked = (track: Track) => {
-    playerStore.setTrack(track);
+const onTrackClicked = (idx: number) => {
+    if (directoryStore.status !== 'success') {
+        return;
+    }
+
+    playerStore.setPlaylist({
+        tracks: directoryStore.directory.tracks,
+        idx
+    });
 };
 
 </script>
@@ -62,9 +68,9 @@ const onTrackClicked = (track: Track) => {
         <div>Tracks:</div>
         <ul>
             <li
-                v-for='track in directoryStore.directory.tracks'
+                v-for='(track, idx) in directoryStore.directory.tracks'
                 :key='track.path'
-                @click='() => onTrackClicked(track)'>
+                @click='() => onTrackClicked(idx)'>
                 {{ track.path }}
             </li>
         </ul>

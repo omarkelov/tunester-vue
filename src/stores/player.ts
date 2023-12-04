@@ -4,7 +4,7 @@ import { defineStore } from 'pinia';
 import { fetchRateTrack } from '../api/trackAPI';
 import { abortGroupControllers, createAbortController, removeAbortController } from '../util/aborting';
 import { handleFetching } from '../util/fetching';
-import { Track, TrackDeepRating } from '../util/types';
+import { Playlist, Track, TrackDeepRating } from '../util/types';
 
 
 const PLAYER_STORE_NAME = 'player';
@@ -12,7 +12,7 @@ const PLAYER_STORE_NAME = 'player';
 let timerId: number;
 
 type State = {
-    track?: Track;
+    playlist?: Playlist;
     isTrackBeingRated: boolean;
     audioElement?: HTMLAudioElement;
     isPlaying: boolean;
@@ -23,7 +23,7 @@ type State = {
 export const usePlayerStore = defineStore({
     id: PLAYER_STORE_NAME,
     state: (): State => ({
-        track: undefined,
+        playlist: undefined,
         isTrackBeingRated: false,
         audioElement: undefined,
         isPlaying: false,
@@ -31,15 +31,27 @@ export const usePlayerStore = defineStore({
         volume: 0.5,
     }),
     getters: {
-        duration: state => state.track?.meta.duration || 0,
+        track: state => state.playlist?.tracks[state.playlist.idx],
+        duration(): number {
+            return this.track?.meta.duration ?? 0;
+        },
     },
     actions: {
-        setTrack(track: Track) {
+        setPlaylist(playlist: Playlist) {
+            if (this.playlist?.tracks === playlist.tracks && this.playlist.idx === playlist.idx) {
+                return;
+            }
+
             this.stop();
-            this.track = track;
+
+            if (this.playlist?.tracks === playlist.tracks) {
+                this.playlist.idx = playlist.idx;
+            } else {
+                this.playlist = playlist;
+            }
         },
         async rateTrack(rating: number) {
-            if (!this.track) {
+            if (!this.playlist || !this.track) {
                 return;
             }
 
@@ -50,7 +62,7 @@ export const usePlayerStore = defineStore({
             }
 
             this.isTrackBeingRated = true;
-            this.track = mergeRating(this.track, rating);
+            this.playlist.tracks[this.playlist.idx] = mergeRating(this.track, rating);
 
             const trackPath = this.track.path;
             const abortController = createAbortController(PLAYER_STORE_NAME);
@@ -61,7 +73,7 @@ export const usePlayerStore = defineStore({
 
             if (error) {
                 console.log(error);
-                this.track = mergeRating(this.track, currentRating);
+                this.playlist.tracks[this.playlist.idx] = mergeRating(this.track, currentRating);
                 this.isTrackBeingRated = false;
                 return;
             }
@@ -82,7 +94,7 @@ export const usePlayerStore = defineStore({
             }
         },
         play() {
-            if (!this.audioElement || !this.track || this.isPlaying) {
+            if (!this.audioElement || !this.playlist || this.isPlaying) {
                 return;
             }
 
@@ -90,7 +102,7 @@ export const usePlayerStore = defineStore({
             this.audioElement.play();
 
             timerId = setInterval(() => {
-                if (!this.audioElement || !this.track || !this.audioElement.duration) {
+                if (!this.audioElement || !this.playlist || !this.audioElement.duration) {
                     return;
                 }
 
@@ -98,7 +110,7 @@ export const usePlayerStore = defineStore({
             }, 100);
         },
         pause() {
-            if (!this.audioElement || !this.track || !this.isPlaying) {
+            if (!this.audioElement || !this.playlist || !this.isPlaying) {
                 return;
             }
 
@@ -115,7 +127,7 @@ export const usePlayerStore = defineStore({
             this.seek(0);
         },
         seek(seconds: number) {
-            if (!this.audioElement || !this.track) {
+            if (!this.audioElement || !this.playlist) {
                 return;
             }
 

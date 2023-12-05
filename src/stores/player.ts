@@ -6,6 +6,7 @@ import { fetchRateTrack } from '../api/trackAPI';
 import { RepeatState } from '../components/icons/Repeat.vue';
 import { ShuffleState } from '../components/icons/Shuffle.vue';
 import { abortGroupControllers, createAbortController, removeAbortController } from '../util/aborting';
+import { rotate, shuffle, shuffleWithSeed } from '../util/arrays';
 import { handleFetching } from '../util/fetching';
 import { Playlist, Track, TrackDeepRating } from '../util/types';
 
@@ -14,8 +15,15 @@ const PLAYER_STORE_NAME = 'player';
 
 let timerId: number;
 
+type ShuffleIndexes = {
+    shuffled: {
+        indexes: number[];
+        idx: number;
+    };
+}
+
 type State = {
-    playlist?: Playlist;
+    playlist?: Playlist & ShuffleIndexes;
     isTrackBeingRated: boolean;
     audioElement?: HTMLAudioElement;
     isPlaying: boolean;
@@ -33,8 +41,8 @@ export const usePlayerStore = defineStore({
         audioElement: undefined,
         isPlaying: false,
         time: 0,
-        shuffleState: ShuffleState.NO,
-        repeatState: RepeatState.NO,
+        shuffleState: ShuffleState.SHUFFLE_DIRECTORY,
+        repeatState: RepeatState.CYCLE,
         volume: 0.5,
     }),
     getters: {
@@ -54,10 +62,36 @@ export const usePlayerStore = defineStore({
             if (this.playlist?.tracks === playlist.tracks) {
                 this.playlist.idx = playlist.idx;
             } else {
-                this.playlist = playlist;
+                // TODO: Switch to "shuffle" after testing
+                // const shuffledIndexes = shuffle([...Array(playlist.tracks.length)].map((_, idx) => idx));
+                const shuffledIndexes = shuffleWithSeed([...Array(playlist.tracks.length)].map((_, idx) => idx), 1);
+
+                this.playlist = {
+                    ...playlist,
+                    shuffled: {
+                        indexes: shuffledIndexes,
+                        idx: 0,
+                    },
+                };
+            }
+
+            if (this.shuffleState === ShuffleState.SHUFFLE_DIRECTORY) {
+                this.syncShuffledIndexes();
             }
 
             this.play();
+        },
+        syncShuffledIndexes() {
+            if (!this.playlist) {
+                return;
+            }
+
+            const idxShift = this.playlist.shuffled.indexes.findIndex(si => si === this.playlist!.idx);
+
+            this.playlist.shuffled = {
+                indexes: rotate(this.playlist.shuffled.indexes, -idxShift),
+                idx: 0,
+            };
         },
         async rateTrack(rating: number) {
             if (!this.playlist || !this.track) {
@@ -121,10 +155,16 @@ export const usePlayerStore = defineStore({
                     return;
                 }
 
-                if (this.audioElement.ended) {
-                    this.playNext();
-                } else {
+                if (!this.audioElement.ended) {
                     this.time = this.audioElement.currentTime / this.audioElement.duration;
+                    return;
+                }
+
+                if (this.repeatState === RepeatState.SINGLE) {
+                    this.seek(0);
+                    this.audioElement.play();
+                } else {
+                    this.playNext();
                 }
             }, 100);
         },
@@ -154,14 +194,37 @@ export const usePlayerStore = defineStore({
             this.time = seconds;
         },
         playPrevious() {
-            if (!this.playlist) {
+            if (!this.playlist || this.repeatState === RepeatState.SINGLE) {
                 return;
             }
 
-            let previousIdx = this.playlist.idx - 1;
+            if (this.shuffleState === ShuffleState.SHUFFLE_GLOBALLY) {
+                // TODO: global
+                return;
+            }
 
-            if (previousIdx < 0) {
-                previousIdx = this.playlist.tracks.length - 1;
+            let previousIdx: number;
+
+            if (this.repeatState === RepeatState.NO) {
+                // TODO: get previous directory (or fetch it and merge with current playlist)
+                return;
+            } else { // RepeatState.CYCLE
+                if (this.shuffleState === ShuffleState.NO) {
+                    previousIdx = this.playlist.idx - 1;
+
+                    if (previousIdx < 0) {
+                        previousIdx = this.playlist.tracks.length - 1;
+                    }
+                } else { // ShuffleState.SHUFFLE_DIRECTORY
+                    let shuffledIndexesIdx = this.playlist.shuffled.idx - 1;
+
+                    if (shuffledIndexesIdx < 0) {
+                        shuffledIndexesIdx = this.playlist.shuffled.indexes.length - 1;
+                    }
+
+                    this.playlist.shuffled.idx = shuffledIndexesIdx;
+                    previousIdx = this.playlist.shuffled.indexes[shuffledIndexesIdx];
+                }
             }
 
             this.stop();
@@ -169,14 +232,37 @@ export const usePlayerStore = defineStore({
             this.play();
         },
         playNext() {
-            if (!this.playlist) {
+            if (!this.playlist || this.repeatState === RepeatState.SINGLE) {
                 return;
             }
 
-            let nextIdx = this.playlist.idx + 1;
+            if (this.shuffleState === ShuffleState.SHUFFLE_GLOBALLY) {
+                // TODO: global
+                return;
+            }
 
-            if (nextIdx >= this.playlist.tracks.length) {
-                nextIdx = 0;
+            let nextIdx: number;
+
+            if (this.repeatState === RepeatState.NO) {
+                // TODO: get next directory (or fetch it and merge with current playlist)
+                return;
+            } else { // RepeatState.CYCLE
+                if (this.shuffleState === ShuffleState.NO) {
+                    nextIdx = this.playlist.idx + 1;
+
+                    if (nextIdx >= this.playlist.tracks.length) {
+                        nextIdx = 0;
+                    }
+                } else { // ShuffleState.SHUFFLE_DIRECTORY
+                    let shuffledIndexesIdx = this.playlist.shuffled.idx + 1;
+
+                    if (shuffledIndexesIdx >= this.playlist.shuffled.indexes.length) {
+                        shuffledIndexesIdx = 0;
+                    }
+
+                    this.playlist.shuffled.idx = shuffledIndexesIdx;
+                    nextIdx = this.playlist.shuffled.indexes[shuffledIndexesIdx];
+                }
             }
 
             this.stop();
@@ -187,6 +273,7 @@ export const usePlayerStore = defineStore({
             switch (this.shuffleState) {
                 case ShuffleState.NO:
                     this.shuffleState = ShuffleState.SHUFFLE_DIRECTORY;
+                    this.syncShuffledIndexes();
                     break;
                 case ShuffleState.SHUFFLE_DIRECTORY:
                     this.shuffleState = ShuffleState.SHUFFLE_GLOBALLY;

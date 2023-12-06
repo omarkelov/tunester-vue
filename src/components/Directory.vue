@@ -37,7 +37,7 @@ const onTrackClicked = (idx: number) => {
     }
 
     playerStore.setPlaylist({
-        directoryPath: directoryStore.directory.path,
+        path: directoryStore.directory.path,
         tracks: directoryStore.directory.tracks,
         idx,
     });

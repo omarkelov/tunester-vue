@@ -10,9 +10,13 @@ const LOGOUT = '/api/logout';
 const DIRECTORY = '/api/directory';
 const TRACK = '/api/track';
 const TRACK_RATE = `${TRACK}/rate`;
+const TRACK_PREVIOUS_RANDOM = `${TRACK}/previous-random`;
+const TRACK_NEXT_RANDOM = `${TRACK}/next-random`;
 
 export const LOGIN_ADDRESS = `${SERVER_ADDRESS}${LOGIN}`;
 export const LOGOUT_ADDRESS = `${SERVER_ADDRESS}${LOGOUT}`;
 
 export const DIRECTORY_ADDRESS = `${SERVER_ADDRESS}${DIRECTORY}`;
 export const TRACK_RATE_ADDRESS = `${SERVER_ADDRESS}${TRACK_RATE}`;
+export const TRACK_PREVIOUS_RANDOM_ADDRESS = `${SERVER_ADDRESS}${TRACK_PREVIOUS_RANDOM}`;
+export const TRACK_NEXT_RANDOM_ADDRESS = `${SERVER_ADDRESS}${TRACK_NEXT_RANDOM}`;

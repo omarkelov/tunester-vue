@@ -15,3 +15,10 @@ export const roundUpTo = (value: number, r?: number) => {
 
     return Math.round(value / r) * r;
 };
+
+export const getRandomInt = (min?: number, max?: number) => {
+    min = Math.ceil(min ?? Number.MIN_SAFE_INTEGER);
+    max = Math.floor(max ?? Number.MAX_SAFE_INTEGER);
+
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+};

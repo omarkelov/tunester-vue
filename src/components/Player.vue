@@ -49,16 +49,17 @@ const onRepeatClicked = () => playerStore.switchRepeatState();
 </script>
 
 <template>
+    <audio
+        class='w-full'
+        ref='audioRef'
+        crossOrigin='use-credentials'
+    ></audio>
     <div
+        v-if='playerStore.track'
         ref='wrapperRef'
         class='fixed bottom-0 w-full flex flex-col gap-2 items-center'
     >
         <p v-if='playerStore.isTrackBeingRated'>Loading...</p>
-        <audio
-            class='w-full'
-            ref='audioRef'
-            crossOrigin='use-credentials'
-        ></audio>
         <div class='p-4 pb-3 w-full flex flex-col gap-3 bg-neutral-900'>
             <div class='flex gap-3 justify-center items-center'>
                 <Music

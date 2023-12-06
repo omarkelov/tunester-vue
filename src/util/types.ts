@@ -58,8 +58,6 @@ export type TrackMetaCommentCut = {
 
 export type TrackDeepRating = DeepPick<Track, 'meta.comment.rating'>;
 
-export type Playlist = {
-    directoryPath: string;
-    tracks: Track[];
+export type Playlist = Pick<Directory, 'path' | 'tracks'> & {
     idx: number;
 }

@@ -2,12 +2,13 @@ import { deepmerge } from "deepmerge-ts";
 import { defineStore } from 'pinia';
 
 import { SERVER_ADDRESS } from '../api/constants';
-import { fetchRateTrack } from '../api/trackAPI';
+import { fetchGetNextRandomTrack, fetchGetPreviousRandomTrack, fetchRateTrack } from '../api/trackAPI';
 import { RepeatState } from '../components/icons/Repeat.vue';
 import { ShuffleState } from '../components/icons/Shuffle.vue';
 import { abortGroupControllers, createAbortController, removeAbortController } from '../util/aborting';
 import { rotate, shuffle, shuffleWithSeed } from '../util/arrays';
 import { handleFetching } from '../util/fetching';
+import { getRandomInt } from '../util/numbers';
 import { Playlist, Track, TrackDeepRating } from '../util/types';
 
 
@@ -22,8 +23,15 @@ type ShuffleIndexes = {
     };
 }
 
+type GlobalRandomTrack = {
+    seed: number;
+    isTrackBeingFetched: boolean;
+    track?: Track;
+}
+
 type State = {
     playlist?: Playlist & ShuffleIndexes;
+    globalRandomTrack: GlobalRandomTrack;
     isTrackBeingRated: boolean;
     audioElement?: HTMLAudioElement;
     isPlaying: boolean;
@@ -37,16 +45,22 @@ export const usePlayerStore = defineStore({
     id: PLAYER_STORE_NAME,
     state: (): State => ({
         playlist: undefined,
+        globalRandomTrack: {
+            // seed: getRandomInt(0, 1_000_000),
+            seed: 1, // TODO: Switch to "getRandomInt" after testing
+            isTrackBeingFetched: false,
+            track: undefined,
+        },
         isTrackBeingRated: false,
         audioElement: undefined,
         isPlaying: false,
         time: 0,
-        shuffleState: ShuffleState.SHUFFLE_DIRECTORY,
+        shuffleState: ShuffleState.SHUFFLE_GLOBALLY,
         repeatState: RepeatState.CYCLE,
         volume: 0.5,
     }),
     getters: {
-        track: state => state.playlist?.tracks[state.playlist.idx],
+        track: state => state.globalRandomTrack.track ?? state.playlist?.tracks[state.playlist.idx],
         duration(): number {
             return this.track?.meta.duration ?? 0;
         },
@@ -54,6 +68,7 @@ export const usePlayerStore = defineStore({
     actions: {
         setPlaylist(playlist: Playlist) {
             if (this.playlist?.tracks === playlist.tracks && this.playlist.idx === playlist.idx) {
+                this.globalRandomTrack.track = undefined;
                 return;
             }
 
@@ -78,6 +93,8 @@ export const usePlayerStore = defineStore({
             if (this.shuffleState === ShuffleState.SHUFFLE_DIRECTORY) {
                 this.syncShuffledIndexes();
             }
+
+            this.globalRandomTrack.track = undefined;
 
             this.play();
         },
@@ -194,12 +211,12 @@ export const usePlayerStore = defineStore({
             this.time = seconds;
         },
         playPrevious() {
-            if (!this.playlist || this.repeatState === RepeatState.SINGLE) {
+            if (this.shuffleState === ShuffleState.SHUFFLE_GLOBALLY) {
+                this.playGlobalRandom(false);
                 return;
             }
 
-            if (this.shuffleState === ShuffleState.SHUFFLE_GLOBALLY) {
-                // TODO: global
+            if (!this.playlist) {
                 return;
             }
 
@@ -228,16 +245,17 @@ export const usePlayerStore = defineStore({
             }
 
             this.stop();
+            this.globalRandomTrack.track = undefined;
             this.playlist.idx = previousIdx;
             this.play();
         },
-        playNext() {
-            if (!this.playlist || this.repeatState === RepeatState.SINGLE) {
+        async playNext() {
+            if (this.shuffleState === ShuffleState.SHUFFLE_GLOBALLY) {
+                this.playGlobalRandom(true);
                 return;
             }
 
-            if (this.shuffleState === ShuffleState.SHUFFLE_GLOBALLY) {
-                // TODO: global
+            if (!this.playlist) {
                 return;
             }
 
@@ -266,7 +284,38 @@ export const usePlayerStore = defineStore({
             }
 
             this.stop();
+            this.globalRandomTrack.track = undefined;
             this.playlist.idx = nextIdx;
+            this.play();
+        },
+        async playGlobalRandom(isNext: boolean) {
+            if (!this.track) {
+                return;
+            }
+
+            this.stop();
+
+            this.globalRandomTrack.isTrackBeingFetched = true;
+
+            const trackPath = this.track.path;
+            const abortController = createAbortController(PLAYER_STORE_NAME);
+            const { result: newTrack, error } = await handleFetching<Track>(
+                (signal: AbortSignal) => (
+                    isNext ? fetchGetNextRandomTrack : fetchGetPreviousRandomTrack
+                )(trackPath, 0, this.globalRandomTrack.seed, signal), // TODO: rating
+                abortController.signal,
+            );
+
+            if (error) {
+                console.log(error);
+                this.globalRandomTrack.isTrackBeingFetched = false;
+                return;
+            }
+
+            removeAbortController(PLAYER_STORE_NAME, abortController);
+            this.globalRandomTrack.track = newTrack;
+            this.globalRandomTrack.isTrackBeingFetched = false;
+
             this.play();
         },
         switchShuffleState() {

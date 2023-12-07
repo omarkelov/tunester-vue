@@ -2,6 +2,7 @@ import { deepmerge } from "deepmerge-ts";
 import { defineStore } from 'pinia';
 
 import { SERVER_ADDRESS } from '../api/constants';
+import { fetchGetNextDirectory, fetchGetPreviousDirectory } from '../api/directoryAPI';
 import { fetchGetNextRandomTrack, fetchGetPreviousRandomTrack, fetchRateTrack } from '../api/trackAPI';
 import { RepeatState } from '../components/icons/Repeat.vue';
 import { ShuffleState } from '../components/icons/Shuffle.vue';
@@ -9,7 +10,7 @@ import { abortGroupControllers, createAbortController, removeAbortController } f
 import { rotate, shuffle, shuffleWithSeed } from '../util/arrays';
 import { handleFetching } from '../util/fetching';
 import { getRandomInt } from '../util/numbers';
-import { Playlist, Track, TrackDeepRating } from '../util/types';
+import { Directory, Playlist, Track, TrackDeepRating } from '../util/types';
 
 
 const PLAYER_STORE_NAME = 'player';
@@ -30,7 +31,9 @@ type GlobalRandomTrack = {
 }
 
 type State = {
-    playlist?: Playlist & ShuffleIndexes;
+    playlist?: Playlist & ShuffleIndexes & {
+        isPlaylistBeingFetched: boolean;
+    };
     globalRandomTrack: GlobalRandomTrack;
     isTrackBeingRated: boolean;
     audioElement?: HTMLAudioElement;
@@ -55,8 +58,8 @@ export const usePlayerStore = defineStore({
         audioElement: undefined,
         isPlaying: false,
         time: 0,
-        shuffleState: ShuffleState.SHUFFLE_GLOBALLY,
-        repeatState: RepeatState.CYCLE,
+        shuffleState: ShuffleState.NO,
+        repeatState: RepeatState.NO,
         volume: 0.5,
     }),
     getters: {
@@ -87,6 +90,7 @@ export const usePlayerStore = defineStore({
                         indexes: shuffledIndexes,
                         idx: 0,
                     },
+                    isPlaylistBeingFetched: false,
                 };
             }
 
@@ -222,26 +226,33 @@ export const usePlayerStore = defineStore({
 
             let previousIdx: number;
 
-            if (this.repeatState === RepeatState.NO) {
-                // TODO: get previous directory (or fetch it and merge with current playlist)
-                return;
-            } else { // RepeatState.CYCLE
-                if (this.shuffleState === ShuffleState.NO) {
-                    previousIdx = this.playlist.idx - 1;
+            if (this.shuffleState === ShuffleState.NO) {
+                previousIdx = this.playlist.idx - 1;
 
-                    if (previousIdx < 0) {
-                        previousIdx = this.playlist.tracks.length - 1;
-                    }
-                } else { // ShuffleState.SHUFFLE_DIRECTORY
-                    let shuffledIndexesIdx = this.playlist.shuffled.idx - 1;
-
-                    if (shuffledIndexesIdx < 0) {
-                        shuffledIndexesIdx = this.playlist.shuffled.indexes.length - 1;
+                if (previousIdx < 0) {
+                    if (this.repeatState === RepeatState.NO) {
+                        this.setAdjacentPlaylist(false);
+                        return;
                     }
 
-                    this.playlist.shuffled.idx = shuffledIndexesIdx;
-                    previousIdx = this.playlist.shuffled.indexes[shuffledIndexesIdx];
+                    // RepeatState.CYCLE
+                    previousIdx = this.playlist.tracks.length - 1;
                 }
+            } else { // ShuffleState.SHUFFLE_DIRECTORY
+                let shuffledIndexesIdx = this.playlist.shuffled.idx - 1;
+
+                if (shuffledIndexesIdx < 0) {
+                    if (this.repeatState === RepeatState.NO) {
+                        this.setAdjacentPlaylist(false);
+                        return;
+                    }
+
+                    // RepeatState.CYCLE
+                    shuffledIndexesIdx = this.playlist.shuffled.indexes.length - 1;
+                }
+
+                this.playlist.shuffled.idx = shuffledIndexesIdx;
+                previousIdx = this.playlist.shuffled.indexes[shuffledIndexesIdx];
             }
 
             this.stop();
@@ -249,7 +260,7 @@ export const usePlayerStore = defineStore({
             this.playlist.idx = previousIdx;
             this.play();
         },
-        async playNext() {
+        playNext() {
             if (this.shuffleState === ShuffleState.SHUFFLE_GLOBALLY) {
                 this.playGlobalRandom(true);
                 return;
@@ -261,26 +272,33 @@ export const usePlayerStore = defineStore({
 
             let nextIdx: number;
 
-            if (this.repeatState === RepeatState.NO) {
-                // TODO: get next directory (or fetch it and merge with current playlist)
-                return;
-            } else { // RepeatState.CYCLE
-                if (this.shuffleState === ShuffleState.NO) {
-                    nextIdx = this.playlist.idx + 1;
+            if (this.shuffleState === ShuffleState.NO) {
+                nextIdx = this.playlist.idx + 1;
 
-                    if (nextIdx >= this.playlist.tracks.length) {
-                        nextIdx = 0;
-                    }
-                } else { // ShuffleState.SHUFFLE_DIRECTORY
-                    let shuffledIndexesIdx = this.playlist.shuffled.idx + 1;
-
-                    if (shuffledIndexesIdx >= this.playlist.shuffled.indexes.length) {
-                        shuffledIndexesIdx = 0;
+                if (nextIdx >= this.playlist.tracks.length) {
+                    if (this.repeatState === RepeatState.NO) {
+                        this.setAdjacentPlaylist(true);
+                        return;
                     }
 
-                    this.playlist.shuffled.idx = shuffledIndexesIdx;
-                    nextIdx = this.playlist.shuffled.indexes[shuffledIndexesIdx];
+                    // RepeatState.CYCLE
+                    nextIdx = 0;
                 }
+            } else { // ShuffleState.SHUFFLE_DIRECTORY
+                let shuffledIndexesIdx = this.playlist.shuffled.idx + 1;
+
+                if (shuffledIndexesIdx >= this.playlist.shuffled.indexes.length) {
+                    if (this.repeatState === RepeatState.NO) {
+                        this.setAdjacentPlaylist(true);
+                        return;
+                    }
+
+                    // RepeatState.CYCLE
+                    shuffledIndexesIdx = 0;
+                }
+
+                this.playlist.shuffled.idx = shuffledIndexesIdx;
+                nextIdx = this.playlist.shuffled.indexes[shuffledIndexesIdx];
             }
 
             this.stop();
@@ -306,17 +324,49 @@ export const usePlayerStore = defineStore({
                 abortController.signal,
             );
 
-            if (error) {
-                console.log(error);
-                this.globalRandomTrack.isTrackBeingFetched = false;
+            this.globalRandomTrack.isTrackBeingFetched = false;
+            removeAbortController(PLAYER_STORE_NAME, abortController);
+
+            if (error || !newTrack) {
+                console.log(error || 'No track');
                 return;
             }
 
-            removeAbortController(PLAYER_STORE_NAME, abortController);
             this.globalRandomTrack.track = newTrack;
-            this.globalRandomTrack.isTrackBeingFetched = false;
 
             this.play();
+        },
+        async setAdjacentPlaylist(isNext: boolean) {
+            if (!this.playlist) {
+                return;
+            }
+
+            this.stop();
+
+            this.playlist.isPlaylistBeingFetched = true;
+
+            const directoryPath = this.playlist.path;
+            const abortController = createAbortController(PLAYER_STORE_NAME);
+            const { result: newDirectory, error } = await handleFetching<Directory>(
+                (signal: AbortSignal) => (
+                    isNext ? fetchGetNextDirectory : fetchGetPreviousDirectory
+                )(directoryPath, 0, signal), // TODO: rating
+                abortController.signal,
+            );
+
+            this.playlist.isPlaylistBeingFetched = false;
+            removeAbortController(PLAYER_STORE_NAME, abortController);
+
+            if (error || !newDirectory?.tracks.length) {
+                console.log(error || 'No tracks');
+                return;
+            }
+
+            this.setPlaylist({
+                path: newDirectory.path,
+                tracks: newDirectory.tracks,
+                idx: isNext ? 0 : newDirectory.tracks.length - 1,
+            });
         },
         switchShuffleState() {
             switch (this.shuffleState) {

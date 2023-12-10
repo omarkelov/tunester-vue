@@ -46,13 +46,7 @@ const onTrackClicked = (idx: number) => {
 </script>
 
 <template>
-    <div v-if='["initial", "loading"].includes(directoryStore.status)'>
-        <span>Loading...</span>
-    </div>
-    <div v-else-if='directoryStore.status === "error"'>
-        <span>{{ directoryStore.error }}</span>
-    </div>
-    <div v-else-if='directoryStore.status === "success"'>
+    <div v-if='directoryStore.status === "success"'>
         <div>Directory ({{ $route.params.path }})</div>
         <div>{{ directoryStore.directory.path }}</div>
         <div>Directories:</div>
@@ -75,6 +69,12 @@ const onTrackClicked = (idx: number) => {
                 {{ track.path }}
             </li>
         </ul>
+    </div>
+    <div v-else-if='directoryStore.status === "error"'>
+        <span>{{ directoryStore.error }}</span>
+    </div>
+    <div v-else>
+        <span>Loading...</span>
     </div>
 </template>
 

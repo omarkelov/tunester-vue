@@ -2,20 +2,19 @@
 
 import { onMounted, onUnmounted, onUpdated, ref } from 'vue';
 
-import { usePlayerStore } from '../stores/player';
-import { clamp, convertToPercent } from '../util/numbers';
-import { convertTime, trimFileExtension } from '../util/strings';
-
-import Music from './icons/Music.vue';
-import Next from './icons/Next.vue';
-import Previous from './icons/Previous.vue';
-import Refresh from './icons/Refresh.vue';
-import Repeat from './icons/Repeat.vue';
-import PlayOrPause from './icons/PlayOrPause.vue';
-import Shuffle from './icons/Shuffle.vue';
-import Stop from './icons/Stop.vue';
-import RangeSlider, { UpdateValue } from './RangeSlider.vue';
-import Rating from './Rating.vue';
+import Music from '../../components/icons/Music.vue';
+import Next from '../../components/icons/Next.vue';
+import Previous from '../../components/icons/Previous.vue';
+import Refresh from '../../components/icons/Refresh.vue';
+import Repeat from '../../components/icons/Repeat.vue';
+import PlayOrPause from '../../components/icons/PlayOrPause.vue';
+import Shuffle from '../../components/icons/Shuffle.vue';
+import Stop from '../../components/icons/Stop.vue';
+import RangeSlider, { UpdateValue } from '../../components/RangeSlider.vue';
+import Rating from '../../components/Rating.vue';
+import { usePlayerStore } from '../../stores/player';
+import { clamp, convertToPercent } from '../../util/numbers';
+import { convertTime, trimFileExtension } from '../../util/strings';
 
 
 const emit = defineEmits<{ (e: 'onWrapperHeightUpdated', height?: number): void }>();

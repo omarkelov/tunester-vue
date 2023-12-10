@@ -3,9 +3,9 @@
 import { watch } from 'vue';
 import { useRoute } from 'vue-router';
 
-import { MUSIC, PATH } from '../router';
-import { useDirectoryStore } from '../stores/directory';
-import { usePlayerStore } from '../stores/player';
+import { MUSIC, PATH } from '../../router';
+import { useDirectoryStore } from '../../stores/directory';
+import { usePlayerStore } from '../../stores/player';
 
 
 const directoryStore = useDirectoryStore();

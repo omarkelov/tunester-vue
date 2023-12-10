@@ -2,9 +2,9 @@
 
 import { ref } from 'vue';
 
-import Directory from '../components/Directory.vue';
-import NavBar from '../components/NavBar.vue';
-import Player from '../components/Player.vue';
+import Directory from '../features/directory/Directory.vue';
+import NavBar from '../features/navbar/NavBar.vue';
+import Player from '../features/player/Player.vue';
 
 const playerWrapperHeightRef = ref<number>();
 

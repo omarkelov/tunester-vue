@@ -2,9 +2,9 @@
 
 import { useRouter } from 'vue-router';
 
-import { useAbortController } from '../hooks/useAbortController';
-import { LOGIN } from '../router';
-import { useUserStore } from '../stores/user';
+import { useAbortController } from '../../hooks/useAbortController';
+import { LOGIN } from '../../router';
+import { useUserStore } from '../../stores/user';
 
 
 const userStore = useUserStore();

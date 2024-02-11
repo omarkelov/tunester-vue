@@ -20,6 +20,7 @@ export type Directory = {
     path: string;
     lastUpdated: string;
     size: number;
+    ratingCountByRating: { [key: string]: number };
     directories: Directory[];
     tracks: Track[];
 }

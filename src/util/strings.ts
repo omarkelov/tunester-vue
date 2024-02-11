@@ -24,7 +24,11 @@ export const trimFileExtension = (str?: string) => {
         : str;
 };
 
-export const convertTime = (seconds: number) => {
+export const convertTime = (seconds?: number) => {
+    if (!seconds) {
+        return '0:00';
+    }
+
     const time = new Date(seconds * 1000)
         .toISOString()
         .substring(seconds < 3600 ? 14 : 11, 19);
@@ -40,7 +44,13 @@ export const convertISODateToLocaleString = (isoDate: string) => {
     return `${date.toLocaleDateString('ru-RU')} ${date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;
 };
 
-export const convertBytesToMegabytes = (size: number) => `${+(size * 0.00000095367431640625).toFixed(2)} Mb`;
+export const convertBitrate = (bitrate?: number) => bitrate === undefined
+    ? ''
+    : `${(bitrate * 0.0009765625).toFixed(0)} kb/s`;
+
+export const convertBytesToMegabytes = (size?: number) => size === undefined
+    ? ''
+    : `${+(size * 0.00000095367431640625).toFixed(2)} Mb`;
 
 export const convertRatingCountByRating = (ratingCountByRating: Directory['ratingCountByRating']) => {
     const { ratingSum, countSum, withoutRatingCount } = Object.entries(ratingCountByRating).reduce((acc, [rating, count]) => {
